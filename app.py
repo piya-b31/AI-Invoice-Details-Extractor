@@ -146,8 +146,7 @@ if uploaded_file is not None:
         st.session_state.file_name = uploaded_file.name
 
     if st.session_state.doc_type == "image":
-        uploaded_file.seek(0)
-        st.image(Image.open(uploaded_file), caption="Uploaded Invoice", use_column_width=True)
+        st.success(f"🖼️ Image uploaded: {uploaded_file.name}")
     else:
         st.info(f"📄 PDF uploaded: {uploaded_file.name}")
 
