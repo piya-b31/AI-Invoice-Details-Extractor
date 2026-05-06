@@ -74,27 +74,28 @@ def get_response(user_input, document, doc_type, chat_history):
         return chat.choices[0].message.content
 
     else:
-        # Gemini - build context from history as text
-        history_text = ""
-        for msg in chat_history:
-            role = "User" if msg["role"] == "user" else "Assistant"
-            history_text += f"{role}: {msg['content']}\n"
+        try:
+            history_text = ""
+            for msg in chat_history:
+                role = "User" if msg["role"] == "user" else "Assistant"
+                history_text += f"{role}: {msg['content']}\n"
 
-        contents = [
-            input_prompt + "\n\nChat History:\n" + history_text + "\nUser: " + user_input,
-            document  # PIL image
-        ]
-        response = gemini_client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=contents
-        )
-        return response.text
-    except Exception as e:
-        error_str = str(e)
-        if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-            return "⚠️ Image analysis is not supported right now. Please try uploading a PDF or try again after some time."
-        else:
-            return f" Something went wrong: {error_str}"
+            contents = [
+                input_prompt + "\n\nChat History:\n" + history_text + "\nUser: " + user_input,
+                document
+            ]
+            response = gemini_client.models.generate_content(
+                model="gemini-2.0-flash",
+                contents=contents
+            )
+            return response.text
+
+        except Exception as e:
+            error_str = str(e)
+            if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                return "⚠️ Image analysis is not supported right now. Please try uploading a PDF or try again after some time."
+            else:
+                return f" Something went wrong: {error_str}"
 
 
 # ─── UI ───────────────────────────────────────────────
