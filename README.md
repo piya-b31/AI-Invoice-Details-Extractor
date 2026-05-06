@@ -1,6 +1,6 @@
 # 📃 Invoice Details Extractor
 
-An AI-powered invoice analysis chatbot that extracts and answers questions from invoice images and PDF documents using Google Gemini and Groq AI.
+An AI-powered invoice analysis chatbot that extracts and answers questions from invoice images and PDF documents using Groq AI.
 
 ---
 
@@ -13,11 +13,11 @@ An AI-powered invoice analysis chatbot that extracts and answers questions from 
 ## 📌 Features
 
 - 📄 **PDF Support** — Upload PDF invoices and extract text for analysis
-- 🖼️ **Image Support** — Upload JPG/PNG invoice images for visual analysis
+- 🖼️ **Image Support** — Upload JPG/PNG invoice images for analysis
 - 💬 **Conversational Chatbot** — Ask follow-up questions and cross-question the AI about your invoice
 - 🧠 **Context Memory** — Full chat history maintained throughout the session
 - 🌐 **Multilingual** — Responds in the same language as your question
-- ⚡ **Dual AI Backend** — Groq (PDF) + Gemini (Images) for optimal performance
+- ⚡ **Powered by Groq** — Fast and free AI backend for both images and PDFs
 
 ---
 
@@ -26,7 +26,7 @@ An AI-powered invoice analysis chatbot that extracts and answers questions from 
 | Technology | Purpose |
 |---|---|
 | [Streamlit](https://streamlit.io) | Web application framework |
-| [Google Gemini 2.0 Flash](https://ai.google.dev) | Image invoice analysis |
+| [Groq - LLaMA 4 Scout](https://groq.com) | Image invoice analysis (Vision) |
 | [Groq - LLaMA 3.3 70B](https://groq.com) | PDF invoice analysis |
 | [PyPDF](https://pypdf.readthedocs.io) | PDF text extraction |
 | [Pillow](https://pillow.readthedocs.io) | Image processing |
@@ -59,23 +59,19 @@ cd ai-invoice-details-extractor
 pip install -r requirements.txt
 ```
 
-### 3. Set Up API Keys
+### 3. Set Up API Key
 
 Create a `.streamlit/secrets.toml` file:
 ```toml
-GEMINI_API_KEY = "your_gemini_api_key"
 GROQ_API_KEY = "your_groq_api_key"
 ```
 
 Or create a `.env` file:
 ```
-GEMINI_API_KEY=your_gemini_api_key
 GROQ_API_KEY=your_groq_api_key
 ```
 
-> **Get your API keys:**
-> - Gemini API Key → [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
-> - Groq API Key → [console.groq.com](https://console.groq.com)
+> **Get your Groq API Key (Free)** → [console.groq.com](https://console.groq.com)
 
 ### 4. Run the App
 ```bash
@@ -88,7 +84,6 @@ streamlit run app.py
 
 | Variable | Description | Where to Get |
 |---|---|---|
-| `GEMINI_API_KEY` | Google Gemini API Key | [AI Studio](https://aistudio.google.com/app/apikey) |
 | `GROQ_API_KEY` | Groq API Key | [Groq Console](https://console.groq.com) |
 
 ---
@@ -98,9 +93,9 @@ streamlit run app.py
 ```
 Upload Invoice (PDF or Image)
         ↓
-   PDF? → Extract text with PyPDF → Send to Groq (LLaMA 3.3)
+   PDF? → Extract text with PyPDF → Send to Groq LLaMA 3.3 70B
         ↓
-  Image? → Send to Google Gemini 2.0 Flash
+  Image? → Convert to base64 → Send to Groq LLaMA 4 Scout (Vision)
         ↓
    AI analyzes and responds
         ↓
@@ -129,7 +124,6 @@ Upload Invoice (PDF or Image)
 
 ```
 streamlit
-google-genai
 python-dotenv
 pypdf
 groq
@@ -137,10 +131,14 @@ groq
 
 ---
 
-## ⚠️ Known Limitations
+## 🖥️ Deployment
 
-- Image analysis depends on Gemini API free tier quota
-- For best results, use PDF format invoices
+### Streamlit Cloud
+1. Push your code to GitHub
+2. Go to [share.streamlit.io](https://share.streamlit.io)
+3. Connect your repository
+4. Add `GROQ_API_KEY` in **Settings → Secrets**
+5. Deploy!
 
 ---
 
