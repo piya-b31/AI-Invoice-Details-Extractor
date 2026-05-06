@@ -166,7 +166,7 @@ if uploaded_file is not None:
                     st.error(f"Error: {str(e)}")
 
 else:
-    st.info("👆 Please upload an invoice image or PDF to start chatting!")
+    st.info("👆 Please upload an invoice image or PDF")
     st.session_state.chat_history = []
     st.session_state.document = None
     st.session_state.doc_type = None
