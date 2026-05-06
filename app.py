@@ -2,18 +2,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import streamlit as st
-import os 
+import os
+import base64
+from io import BytesIO
 from PIL import Image
 from pypdf import PdfReader
-from google import genai
 from groq import Groq
 
-# API Keys
-gemini_key = os.getenv("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY")
+# API Key
 groq_key = os.getenv("GROQ_API_KEY") or st.secrets.get("GROQ_API_KEY")
-
-# Clients
-gemini_client = genai.Client(api_key=gemini_key)
 groq_client = Groq(api_key=groq_key)
 
 input_prompt = """
@@ -30,8 +27,8 @@ Follow these rules strictly:
 7. If the document is completely unreadable or empty, say "Unable to understand the document".
 """
 
+
 def setup_document(uploaded_file):
-    """Extract content from uploaded file"""
     if uploaded_file.type == "application/pdf":
         uploaded_file.seek(0)
         reader = PdfReader(uploaded_file)
@@ -44,24 +41,26 @@ def setup_document(uploaded_file):
         return Image.open(uploaded_file), "image"
 
 
+def image_to_base64(image):
+    buffered = BytesIO()
+    image.save(buffered, format="PNG")
+    return base64.b64encode(buffered.getvalue()).decode()
+
+
 def get_response(user_input, document, doc_type, chat_history):
-    """Get response from Groq (PDF) or Gemini (image)"""
-    
     if doc_type == "pdf":
-        # Build messages with full chat history for context
+        # PDF → Groq LLaMA text model
         messages = [
             {
                 "role": "system",
                 "content": input_prompt + f"\n\nDocument Content:\n{document}"
             }
         ]
-        # Add chat history
         for msg in chat_history:
             messages.append({
                 "role": msg["role"],
                 "content": msg["content"]
             })
-        # Add current question
         messages.append({
             "role": "user",
             "content": user_input
@@ -74,28 +73,49 @@ def get_response(user_input, document, doc_type, chat_history):
         return chat.choices[0].message.content
 
     else:
+        # Image → Groq LLaMA 4 Scout (vision)
         try:
-            history_text = ""
-            for msg in chat_history:
-                role = "User" if msg["role"] == "user" else "Assistant"
-                history_text += f"{role}: {msg['content']}\n"
+            img_base64 = image_to_base64(document)
 
-            contents = [
-                input_prompt + "\n\nChat History:\n" + history_text + "\nUser: " + user_input,
-                document
+            messages = [
+                {
+                    "role": "system",
+                    "content": input_prompt
+                }
             ]
-            response = gemini_client.models.generate_content(
-                model="gemini-2.0-flash",
-                contents=contents
+            for msg in chat_history:
+                messages.append({
+                    "role": msg["role"],
+                    "content": msg["content"]
+                })
+            messages.append({
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": user_input
+                    },
+                    {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/png;base64,{img_base64}"
+                        }
+                    }
+                ]
+            })
+
+            chat = groq_client.chat.completions.create(
+                model="meta-llama/llama-4-scout-17b-16e-instruct",
+                messages=messages
             )
-            return response.text
+            return chat.choices[0].message.content
 
         except Exception as e:
             error_str = str(e)
             if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-                return "Image analysis is not supported right now. Please try uploading a PDF or try again after some time."
+                return "⚠️ Image analysis is not supported right now. Please try uploading a PDF or try again after some time."
             else:
-                return f"Something went wrong: {error_str}"
+                return f"❌ Something went wrong: {error_str}"
 
 
 # ─── UI ───────────────────────────────────────────────
@@ -119,61 +139,49 @@ uploaded_file = st.file_uploader(
     type=["jpg", "jpeg", "png", "pdf"]
 )
 
-# Process uploaded file
 if uploaded_file is not None:
-    # If new file uploaded, reset chat
     if st.session_state.file_name != uploaded_file.name:
         st.session_state.chat_history = []
         st.session_state.document, st.session_state.doc_type = setup_document(uploaded_file)
         st.session_state.file_name = uploaded_file.name
 
-    # Show preview
     if st.session_state.doc_type == "image":
         uploaded_file.seek(0)
         st.image(Image.open(uploaded_file), caption="Uploaded Invoice", use_column_width=True)
     else:
         st.info(f"📄 PDF uploaded: {uploaded_file.name}")
 
-    # Show chat history
     for msg in st.session_state.chat_history:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
-    # Chat input
     user_input = st.chat_input("Ask anything about this invoice...")
 
     if user_input:
-        # Show user message
         with st.chat_message("user"):
             st.write(user_input)
 
-        # Add to history
         st.session_state.chat_history.append({
             "role": "user",
             "content": user_input
         })
 
-        # Get response
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                try:
-                    response = get_response(
-                        user_input,
-                        st.session_state.document,
-                        st.session_state.doc_type,
-                        st.session_state.chat_history[:-1]  # exclude current question
-                    )
-                    st.write(response)
-                    # Add response to history
-                    st.session_state.chat_history.append({
-                        "role": "assistant",
-                        "content": response
-                    })
-                except Exception as e:
-                    st.error(f"Error: {str(e)}")
+                response = get_response(
+                    user_input,
+                    st.session_state.document,
+                    st.session_state.doc_type,
+                    st.session_state.chat_history[:-1]
+                )
+                st.write(response)
+                st.session_state.chat_history.append({
+                    "role": "assistant",
+                    "content": response
+                })
 
 else:
-    st.info("👆 Please upload an invoice image or PDF")
+    st.info("👆 Please upload an invoice image or PDF to start chatting!")
     st.session_state.chat_history = []
     st.session_state.document = None
     st.session_state.doc_type = None
