@@ -84,6 +84,7 @@ the image only, not general knowledge. Answer in the same language as the input 
 Also if someone asks for summary of the bill, then give a summary of the bill in 3-4 lines. 
 if something is not clear in the image, then say "Unable to understand that part of the image".
 if the question is not related to the bill, then say "This question is not related to the bill".
+you just need to answer what you are asked nothing else from your end.
 """
 
 if submit:
