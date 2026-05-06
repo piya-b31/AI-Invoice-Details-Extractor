@@ -139,7 +139,6 @@ groq
 
 ## ⚠️ Known Limitations
 
-- Live microphone recording is not supported on Streamlit Cloud
 - Image analysis depends on Gemini API free tier quota
 - For best results, use PDF format invoices
 
