@@ -113,9 +113,9 @@ def get_response(user_input, document, doc_type, chat_history):
         except Exception as e:
             error_str = str(e)
             if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
-                return "⚠️ Image analysis is not supported right now. Please try uploading a PDF or try again after some time."
+                return " Image analysis is not supported right now. Please try uploading a PDF or try again after some time."
             else:
-                return f"❌ Something went wrong: {error_str}"
+                return f" Something went wrong: {error_str}"
 
 
 # ─── UI ───────────────────────────────────────────────
@@ -181,7 +181,7 @@ if uploaded_file is not None:
                 })
 
 else:
-    st.info("👆 Please upload an invoice image or PDF to start chatting!")
+    st.info("👆 Please upload an invoice image or PDF")
     st.session_state.chat_history = []
     st.session_state.document = None
     st.session_state.doc_type = None
